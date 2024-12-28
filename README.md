@@ -1,6 +1,17 @@
 # VLC Web Remote Interface Themed
 
-The VLC has a Web Interface that can be used to control VLC from PC and Mobile connected in same wifi Network..There is a bunch of options and interfaces in it..This repo contains html file named `mobile.html`.Its a themed version of the Original VLC mobile interface...
+This repository contains a customized HTML file named mobile.html, which serves as a themed version of the original VLC mobile interface. This interface allows users to control VLC Media Player from any device connected to the same Wi-Fi network, providing a seamless and user-friendly experience for media playback
+
+## Screenshots
+
+![Alt text](demo.png)
+
+## Table of Contents
+
+- [Instructions for Replacing `mobile.html` in VLC](#instructions-for-replacing-mobilehtml-in-vlc)
+- [Instructions for Accessing VLC Web Interface on Smartphones](#instructions-for-accessing-vlc-web-interface-on-smartphones)
+- [How to Activate VLC's Web Interface](#how-to-activate-vlcs-web-interface)
+
 
 ## Instructions for Replacing `mobile.html` in VLC
 
@@ -39,14 +50,66 @@ The VLC has a Web Interface that can be used to control VLC from PC and Mobile c
 1. Close VLC if it is currently running.
 2. Reopen VLC to apply the changes.
 
-## Screenshots
 
-![Alt text](demo.png)
+## Instructions for Accessing VLC Web Interface on Smartphones
+
+To control VLC Media Player from your smartphone using its web interface, follow these detailed steps to set it up properly.
+
+### **1. Enable the VLC Web Interface**
+
+1. **Open VLC Media Player.**
+2. Go to the **Tools** menu and select **Preferences**.
+3. In the bottom left corner, select **All** under "Show settings" to access advanced settings.
+4. Navigate to **Interface** > **Main Interfaces**.
+5. Check the box for **Web** to enable the HTTP interface.
+6. Under the **Lua** section (a sub-branch of Main Interfaces), set a password for the Lua HTTP interface (remember this password).
+7. Save your settings and restart VLC. You will be prompted to allow VLC through your firewall, which is necessary for the web server to run.
+
+### **2. Allow Remote Access**
+
+By default, the web interface is restricted to localhost, meaning it can only be accessed from the machine running VLC. To allow access from other devices:
+
+1. Locate the `.hosts` file:
+   - **Windows:** `C:\Program Files (x86)\VideoLAN\VLC\lua\http\.hosts`
+   - **Mac OS X:** `/Applications/VLC.app/Contents/MacOS/share/lua/http/.hosts`
+   - **Linux:** `/usr/share/vlc/lua/http/.hosts`
+   
+2. Open this file in a text editor with administrative privileges.
+3. Uncomment the last two lines to allow access from all IP addresses (be cautious as this may pose security risks) or specify a range of IP addresses or individual IPs that you want to allow access.
+4. Save the file and restart VLC.
+
+### **3. Accessing the Web Interface**
+
+1. **Find Your Computer's IP Address:**
+   - On Windows, open Command Prompt and type `ipconfig`. Look for the IPv4 Address.
+   - On Mac, go to System Preferences > Network and find your active connection's IP address.
+
+2. On your smartphone, open a web browser and enter:
+   ```
+   http://<your-ip-address>:8080/mobile.html
+   ```
+   Replace `<your-ip-address>` with your computer's actual IP address.
+
+3. You will see an alert prompting you for a username and password:
+   - Leave the username field blank.
+   - Enter the password you set earlier for the Lua HTTP interface.
+
+4. After entering your credentials, you will gain access to the mobile web interface of VLC.
+
+### **4. Bookmarking the Interface**
+
+For easier access in the future, it is recommended to bookmark this page in your smartphone's browser.
+
+### **Additional Notes**
+
+- Ensure that both your smartphone and PC are connected to the same Wi-Fi network for successful communication.
+- If you encounter issues accessing the web interface from your smartphone, verify that firewall settings on your computer allow incoming connections on port 8080.
+
 
 
 > Note: The below is the Instruction to activate the VLC Web Interface...These are the taken from [azrafe7/vlc4youtube](https://github.com/azrafe7/vlc4youtube) and I didn't made this...Its a good step by step instruction so I mentioned it Here
 
-# How to activate VLC's web interface
+## How to activate VLC's web interface
 Did you know that VLC has a web interface? 
 
 ![vlc-web-interface.png](vlc-web-interface.png)
