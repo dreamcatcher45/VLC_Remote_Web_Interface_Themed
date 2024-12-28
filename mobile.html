@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <title>VLC media player - Web Interface</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link href="favicon.ico" type="image/x-icon" rel="shortcut icon" />
+    
+    <!-- Original Scripts (preserved) -->
+    <script type="text/javascript" src="js/common.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="js/jquery.jstree.js"></script>
+    <script type="text/javascript" src="https://releases.flowplayer.org/js/flowplayer-3.2.6.min.js"></script>
+    <script type="text/javascript" src="js/ui.js"></script>
+    <script type="text/javascript" src="js/controllers.js"></script>
+    
+    <!-- Modern UI Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    
+    <!-- Preserve original jQuery UI styles for sliders -->
+    <link type="text/css" href="css/ui-lightness/jquery-ui-1.8.13.custom.css" rel="stylesheet" />
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1b1e',
+                            200: '#2c2e33',
+                            300: '#3b3d42'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .ui-slider { 
+            @apply bg-dark-300 rounded-full h-2 my-4; 
+        }
+        .ui-slider .ui-slider-handle { 
+            @apply w-4 h-4 bg-purple-500 rounded-full -mt-1.5 border-none outline-none cursor-pointer; 
+        }
+        .button48 { 
+            @apply w-16 h-16 flex items-center justify-center rounded-full 
+            transition-all duration-300 ease-in-out; 
+        }
+        /* Custom scrollbar for Webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2c2e33;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b4d53;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5b5d63;
+        }
+        
+        /* Add custom styles for 10s text */
+        .rewind-text {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: -4px;
+        }
+    </style>
+    
+    <!-- Original JavaScript (preserved) -->
+    <script type="text/javascript">
+        var pollStatus = true;
+        $(function(){
+            $('#buttonPrev').click(function(){
+                sendCommand({'command':'pl_previous'});
+                return false;
+            });
+            $('#buttonNext').click(function(){
+                sendCommand({'command':'pl_next'});
+                return false;
+            });
+            $('#buttonOpen').click(function(){
+                window.location='mobile_browse.html';
+            });
+            $('#buttonEQ').click(function(){
+                window.location='mobile_equalizer.html';
+            });
+            $('#buttonSout').click(function(){
+                var file = decodeURIComponent($('#buttonPlay').attr('mrl'));
+                if(file){
+                    var defaultStream = 'new Current broadcast enabled input "'+file+'" output #transcode{vcodec=FLV1,vb=4096,fps=25,scale=1,acodec=mp3,ab=512,samplerate=44100,channels=2}:std{access='+$('#stream_protocol').val()+',mux=avformat{{mux=flv}},dst=0.0.0.0:'+$('#stream_port').val()+'/'+$('#stream_file').val()+'}';
+                    sendVLMCmd('del Current;'+defaultStream+';control Current play','window.location="mobile_view.html"');
+                }
+                return false;
+            });
+            $('#buttonRewd').click(function(){
+                sendCommand({'command': 'seek', 'val': '-' + seek_sec.toString() + 'S'});
+                return false;
+            });
+            $('#buttonFwrd').click(function(){
+                sendCommand({'command': 'seek', 'val': '+' + seek_sec.toString() + 'S'});
+                return false;
+            });
+        })
+    </script>
+</head>
+<body class="bg-dark-100 text-gray-200 min-h-screen">
+    <div id="content" class="max-w-lg mx-auto p-4 space-y-6 sm:p-6">
+        <!-- Album Art -->
+        <div id="art" class="bg-dark-200 rounded-2xl shadow-xl p-4 aspect-square overflow-hidden 
+                            ring-1 ring-dark-300 backdrop-blur-sm">
+            <img id="albumArt" src="/art" class="w-full h-full object-cover rounded-xl" />
+        </div>
+        
+        <!-- Media Title -->
+        <div class="w-full">
+            <div id="mediaTitle" class="text-xl font-medium text-center text-gray-100 truncate px-4 
+                                     sm:text-2xl"></div>
+        </div>
+        
+        <!-- Time Display -->
+        <div class="flex justify-between text-sm text-gray-400 px-2 font-mono">
+            <div id="currentTime" class="dynamic">00:00:00</div>
+            <div id="totalTime" class="dynamic">00:00:00</div>
+        </div>
+        
+        <!-- Seek Slider -->
+        <div id="seekSlider" class="w-full" title="Seek Time"></div>
+        
+        <!-- Playback Controls -->
+        <div id="play_controls" class="flex justify-center space-x-6 sm:space-x-8">
+            <div id="buttonPrev" class="button48" title="Previous">
+                <i class="fas fa-backward text-gray-300 text-4xl"></i>
+            </div>
+            <div id="buttonRewd" class="button48" title="Rewind 10s">
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-rotate-left text-gray-300 text-3xl"></i>
+                    <span class="rewind-text text-gray-300">10s</span>
+                </div>
+            </div>
+            <div id="buttonPlay" class="button48 paused transform hover:scale-110 transition-all duration-300" title="Play">
+                <i class="fas fa-play text-gray-300 text-4xl"></i>
+            </div>
+            <div id="buttonStop" class="button48" title="Stop">
+                <i class="fas fa-stop text-gray-300 text-4xl"></i>
+            </div>
+            <div id="buttonFwrd" class="button48" title="Forward 10s">
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-rotate-right text-gray-300 text-3xl"></i>
+                    <span class="rewind-text text-gray-300">10s</span>
+                </div>
+            </div>
+            <div id="buttonNext" class="button48" title="Next">
+                <i class="fas fa-forward text-gray-300 text-4xl"></i>
+            </div>
+        </div>
+        
+        <!-- Volume Slider -->
+        <div class="flex items-center space-x-4 px-4 bg-dark-200 rounded-xl p-4">
+            <i class="fas fa-volume-up text-gray-300 text-3xl"></i>
+            <div id="volumeSlider" class="flex-1" title="Volume">
+                <img src="images/speaker-32.png" class="hidden ui-slider-handle" alt="volume"/>
+            </div>
+        </div>
+        
+        <!-- Additional Controls -->
+        <div id="controls" class="flex justify-center space-x-6 pt-4 sm:space-x-8">
+            <div id="buttonOpen" class="button48" title="Open Media">
+                <i class="fas fa-folder-open text-gray-300 text-3xl"></i>
+            </div>
+            <div id="buttonFull" class="button48" title="Full Screen">
+                <i class="fas fa-expand text-gray-300 text-3xl"></i>
+            </div>
+            <div id="buttonEQ" class="button48" title="Equalizer">
+                <i class="fas fa-sliders-h text-gray-300 text-3xl"></i>
+            </div>
+            <div id="buttonSout" class="button48" title="Easy Stream">
+                <i class="fas fa-broadcast-tower text-gray-300 text-3xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stream Configuration Dialog -->
+    <div id="window_stream_config" title="Stream Input Configuration" class="hidden">
+        <div class="bg-dark-200 p-4 rounded-lg">
+            <table class="w-full">
+                <tr>
+                    <td class="py-2 text-gray-300">Protocol</td>
+                    <td>
+                        <input type="text" name="stream_protocol" id="stream_protocol" value="http"
+                               class="bg-dark-300 border-dark-300 text-gray-200 rounded px-3 py-2 w-full
+                                      focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="py-2 text-gray-300">Host</td>
+                    <td>
+                        <input type="text" name="stream_host" id="stream_host" value=""
+                               class="bg-dark-300 border-dark-300 text-gray-200 rounded px-3 py-2 w-full
+                                      focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="py-2 text-gray-300">Port</td>
+                    <td>
+                        <input type="text" name="stream_port" id="stream_port" value="8081"
+                               class="bg-dark-300 border-dark-300 text-gray-200 rounded px-3 py-2 w-full
+                                      focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="py-2 text-gray-300">File</td>
+                    <td>
+                        <input type="text" name="stream_file" id="stream_file" value="stream.flv"
+                               class="bg-dark-300 border-dark-300 text-gray-200 rounded px-3 py-2 w-full
+                                      focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+        $(function(){
+            $('#window_stream_config').dialog({
+                autoOpen: false,
+                width: 400,
+                modal: true,
+                dialogClass: 'dark-dialog',
+                buttons:{
+                    "Okay": function(){
+                        $('#player').empty();
+                        $('#player').attr('href',$('#stream_protocol').val()+'://'+$('#stream_host').val()+':'+$('#stream_port').val()+'/'+$('#stream_file').val());
+                        flowplayer("player", "https://releases.flowplayer.org/swf/flowplayer-3.2.7.swf");
+                        $(this).dialog('close');
+                    },
+                    "Cancel": function(){
+                        $(this).dialog('close');
+                    }
+                }
+            });
+        })
+    </script>
+</body>
+</html>
